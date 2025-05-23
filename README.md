@@ -30,12 +30,6 @@ This React application demonstrating **Pipedream Connect's managed authenticatio
 - Get user profiles
 - Full Slack API access
 
-### 🏗️ **Production-Ready Patterns**
-- Backend proxy for secure credential handling
-- Error handling and user feedback
-- Clean React component architecture
-- Environment-based configuration
-
 ## 🚀 Quick Start
 
 ### Prerequisites
