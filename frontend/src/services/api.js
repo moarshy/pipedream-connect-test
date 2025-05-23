@@ -31,11 +31,12 @@ export const apiService = {
   },
 
   // Make authenticated API request on behalf of user
-  makeAuthenticatedRequest: async (accountId, endpoint, options = {}) => {
+  makeAuthenticatedRequest: async (accountId, endpoint, options = {}, userId) => {
     const response = await api.post(`/proxy/${accountId}`, {
       endpoint,
       method: options.method || 'GET',
-      data: options.data || null
+      data: options.data || null,
+      external_user_id: userId // Add user ID
     });
     return response.data;
   }
