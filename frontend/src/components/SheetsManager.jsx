@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { apiService } from '../services/api';
 
 function SheetsManager({ accounts, currentUser }) {
@@ -20,8 +20,6 @@ function SheetsManager({ accounts, currentUser }) {
     setError(null);
     
     try {
-      console.log('Loading Google Sheets for account:', accountId);
-      
       // Use Google Drive API to list spreadsheet files
       const result = await apiService.makeAuthenticatedRequest(
         accountId,
@@ -30,16 +28,12 @@ function SheetsManager({ accounts, currentUser }) {
         currentUser
       );
       
-      console.log('Drive API response:', result);
-      
       if (result.files) {
         setSheets(result.files);
-        console.log('Found sheets:', result.files.length);
       } else {
         setSheets([]);
       }
     } catch (err) {
-      console.error('Failed to load spreadsheets:', err);
       setError('Failed to load spreadsheets: ' + err.message);
     } finally {
       setLoading(false);
@@ -55,8 +49,6 @@ function SheetsManager({ accounts, currentUser }) {
     setSuccess('');
     
     try {
-      console.log('Creating spreadsheet with name:', newSheetName);
-      
       const result = await apiService.makeAuthenticatedRequest(
         selectedAccount,
         'https://sheets.googleapis.com/v4/spreadsheets',
@@ -76,8 +68,6 @@ function SheetsManager({ accounts, currentUser }) {
         currentUser
       );
       
-      console.log('Create spreadsheet response:', result);
-      
       if (result.spreadsheetId) {
         setSuccess(`✅ Spreadsheet "${newSheetName}" created successfully!`);
         setNewSheetName('');
@@ -87,7 +77,6 @@ function SheetsManager({ accounts, currentUser }) {
         setError('Failed to create spreadsheet - no ID returned');
       }
     } catch (err) {
-      console.error('Failed to create spreadsheet:', err);
       setError('Failed to create spreadsheet: ' + err.message);
     } finally {
       setLoading(false);
@@ -103,8 +92,6 @@ function SheetsManager({ accounts, currentUser }) {
     setSuccess('');
     
     try {
-      console.log('Adding data to sheet:', selectedSheet, rowData);
-      
       // Use the correct Google Sheets API format
       // The valueInputOption should be a query parameter, not in the body
       const result = await apiService.makeAuthenticatedRequest(
@@ -119,8 +106,6 @@ function SheetsManager({ accounts, currentUser }) {
         currentUser
       );
       
-      console.log('Add data response:', result);
-      
       if (result.updates || result.updatedRows) {
         setSuccess(`✅ ${description} added successfully!`);
         setTimeout(() => setSuccess(''), 3000);
@@ -128,7 +113,6 @@ function SheetsManager({ accounts, currentUser }) {
         setError('Failed to add data - no updates returned');
       }
     } catch (err) {
-      console.error('Failed to add data:', err);
       setError('Failed to add data: ' + err.message);
     } finally {
       setLoading(false);
@@ -143,8 +127,6 @@ function SheetsManager({ accounts, currentUser }) {
     setError(null);
     
     try {
-      console.log('Reading data from sheet:', selectedSheet);
-      
       const result = await apiService.makeAuthenticatedRequest(
         selectedAccount,
         `https://sheets.googleapis.com/v4/spreadsheets/${selectedSheet}/values/A1:Z100`,
@@ -152,16 +134,12 @@ function SheetsManager({ accounts, currentUser }) {
         currentUser
       );
       
-      console.log('Read data response:', result);
-      
       if (result.values) {
         alert(`Sheet contains ${result.values.length} rows of data. Check console for details.`);
-        console.log('Sheet data:', result.values);
       } else {
         alert('Sheet appears to be empty or no data in range A1:Z100');
       }
     } catch (err) {
-      console.error('Failed to read data:', err);
       setError('Failed to read data: ' + err.message);
     } finally {
       setLoading(false);

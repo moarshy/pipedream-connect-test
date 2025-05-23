@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { apiService } from '../services/api';
 
 function MessageSender({ accounts, currentUser }) {
@@ -21,7 +21,6 @@ function MessageSender({ accounts, currentUser }) {
     setError(null);
     
     try {
-      console.log('Loading channels for account:', accountId);
       const result = await apiService.makeAuthenticatedRequest(
         accountId, 
         'conversations.list',
@@ -29,20 +28,16 @@ function MessageSender({ accounts, currentUser }) {
         currentUser
       );
       
-      console.log('Channels API response:', result);
-      
       if (result.ok && result.channels) {
         // Filter to only show public channels and direct messages
         const availableChannels = result.channels.filter(ch => 
           !ch.is_archived && (ch.is_channel || ch.is_group || ch.is_im)
         );
         setChannels(availableChannels);
-        console.log('Available channels:', availableChannels.length);
       } else {
         setError('Failed to load channels: ' + (result.error || 'Unknown error'));
       }
     } catch (err) {
-      console.error('Failed to load channels:', err);
       setError('Failed to load channels: ' + err.message);
     } finally {
       setLoadingChannels(false);
@@ -69,7 +64,6 @@ function MessageSender({ accounts, currentUser }) {
     setSuccess(false);
 
     try {
-      console.log('Sending message:', { channel, message });
       const result = await apiService.makeAuthenticatedRequest(
         selectedAccount,
         'chat.postMessage',
@@ -83,8 +77,6 @@ function MessageSender({ accounts, currentUser }) {
         currentUser
       );
 
-      console.log('Send message response:', result);
-
       if (result.ok) {
         setSuccess(true);
         setMessage('');
@@ -93,7 +85,6 @@ function MessageSender({ accounts, currentUser }) {
         setError('Slack API error: ' + result.error);
       }
     } catch (err) {
-      console.error('Failed to send message:', err);
       setError('Failed to send message: ' + err.message);
     } finally {
       setLoading(false);

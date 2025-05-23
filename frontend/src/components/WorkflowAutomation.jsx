@@ -21,10 +21,7 @@ function WorkflowAutomation({ accounts, currentUser }) {
     setSuccess(null);
 
     try {
-      console.log('🔄 Starting Slack → Google Sheets workflow...');
-
       // Step 1: Get Slack channels
-      console.log('📡 Fetching Slack channels...');
       const channelsResult = await apiService.makeAuthenticatedRequest(
         slackAccounts[0].id,
         'conversations.list',
@@ -36,10 +33,7 @@ function WorkflowAutomation({ accounts, currentUser }) {
         throw new Error('Failed to get Slack channels: ' + channelsResult.error);
       }
 
-      console.log('✅ Got Slack channels:', channelsResult.channels.length);
-
       // Step 2: Create Google Sheet with channel data
-      console.log('📊 Creating new Google Sheet...');
       const sheetResult = await apiService.makeAuthenticatedRequest(
         googleAccounts[0].id,
         'https://sheets.googleapis.com/v4/spreadsheets',
@@ -66,14 +60,10 @@ function WorkflowAutomation({ accounts, currentUser }) {
       if (!sheetResult.spreadsheetId) {
         throw new Error('Failed to create Google Sheet');
       }
-
-      console.log('✅ Created Google Sheet:', sheetResult.spreadsheetId);
-      console.log('📊 Sheet details:', sheetResult);
       
       // Get the sheet ID from the creation response
       const firstSheet = sheetResult.sheets?.[0];
       const sheetId = firstSheet?.properties?.sheetId || 0;
-      console.log('📊 Using sheet ID:', sheetId, 'for sheet:', firstSheet?.properties?.title);
 
       // Step 3: Prepare channel data
       const channelRows = [
@@ -87,12 +77,6 @@ function WorkflowAutomation({ accounts, currentUser }) {
         ])
       ];
 
-      console.log('📝 Channel data to add:', channelRows);
-      console.log('📝 Number of rows:', channelRows.length);
-      console.log('📝 First few rows:', channelRows.slice(0, 3));
-
-      console.log('📝 Adding data to sheet...');
-      
       // Use batchUpdate method which is more reliable for multi-row data
       const batchResult = await apiService.makeAuthenticatedRequest(
         googleAccounts[0].id,
@@ -122,16 +106,13 @@ function WorkflowAutomation({ accounts, currentUser }) {
         currentUser
       );
       
-      console.log('📝 Batch update result:', batchResult);
-      
       if (batchResult.replies && batchResult.replies.length > 0) {
-        console.log('✅ Batch update successful - data written to sheet');
+        // Batch update successful
       } else {
-        console.log('⚠️ Batch update completed but no replies received');
+        // Batch update completed but no replies received, which can be normal for some operations
       }
 
       // Step 5: Verify data was written by reading it back
-      console.log('🔍 Verifying data was written...');
       setTimeout(async () => {
         try {
           const verifyResult = await apiService.makeAuthenticatedRequest(
@@ -141,23 +122,18 @@ function WorkflowAutomation({ accounts, currentUser }) {
             currentUser
           );
           
-          console.log('🔍 Verification result:', verifyResult);
           if (verifyResult.values && verifyResult.values.length > 1) {
-            console.log('✅ Data verification successful! Found', verifyResult.values.length, 'rows');
-            console.log('Header row:', verifyResult.values[0]);
-            console.log('First data row:', verifyResult.values[1]);
+            // Data verification successful
           } else if (verifyResult.values && verifyResult.values.length === 1) {
-            console.log('⚠️ Only header row found - data may not have been written');
-            console.log('Found data:', verifyResult.values[0]);
+            // Only header row found
           } else {
-            console.log('⚠️ Data verification failed - no data found in sheet');
+            // Data verification failed
           }
         } catch (verifyError) {
-          console.log('⚠️ Could not verify data:', verifyError.message);
+          // Could not verify data
         }
       }, 2000); // Wait 2 seconds for Google Sheets to process
 
-      console.log('✅ Workflow completed successfully!');
       setSuccess(`Workflow completed! Check your Google Sheet: https://docs.google.com/spreadsheets/d/${sheetResult.spreadsheetId}/edit`);
       setTimeout(() => setSuccess(null), 10000); // Show for 10 seconds
 
@@ -181,8 +157,6 @@ function WorkflowAutomation({ accounts, currentUser }) {
     setSuccess(null);
 
     try {
-      console.log('📋 Processing contact form...');
-
       // Simulate contact form data
       const formData = {
         name: 'Test User',
@@ -209,7 +183,6 @@ function WorkflowAutomation({ accounts, currentUser }) {
         throw new Error('Failed to send Slack message: ' + slackResult.error);
       }
 
-      console.log('✅ Contact form processed successfully!');
       setSuccess('Contact form processed successfully! Check your Slack #general channel.');
       setTimeout(() => setSuccess(null), 3000);
 

@@ -30,10 +30,6 @@ function TokenTester({ currentUser }) {
     
     try {
       const data = await apiService.getAccounts(currentUser);
-      console.log('📋 Accounts response:', data);
-      if (data.data && data.data.length > 0) {
-        console.log('📋 First account structure:', data.data[0]);
-      }
       setAccounts(data);
     } catch (err) {
       setError('Failed to fetch accounts: ' + err.message);
