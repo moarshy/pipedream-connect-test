@@ -82,9 +82,34 @@ app.post('/api/proxy/:accountId', async (req, res) => {
     if (endpoint.startsWith('http')) {
       fullUrl = endpoint;
     } else {
-      // Default to Slack API for now, can extend for other apps
-      fullUrl = `https://slack.com/api/${endpoint}`;
+      // Handle different app APIs
+      if (endpoint.includes('sheets.googleapis.com') || endpoint.includes('drive.googleapis.com')) {
+        // Google Sheets/Drive API - endpoint is already complete
+        fullUrl = endpoint;
+      } else if (endpoint.includes(':batchUpdate')) {
+        // Google Sheets batchUpdate endpoint
+        fullUrl = `https://sheets.googleapis.com/v4/${endpoint}`;
+      } else if (endpoint.startsWith('spreadsheets') || endpoint.startsWith('files')) {
+        // Google Sheets API endpoints
+        if (endpoint.startsWith('spreadsheets') && !endpoint.includes('/')) {
+          // Create spreadsheet
+          fullUrl = 'https://sheets.googleapis.com/v4/spreadsheets';
+        } else if (endpoint.startsWith('files')) {
+          // Google Drive API for listing files
+          fullUrl = `https://www.googleapis.com/drive/v3/${endpoint}`;
+        } else if (endpoint.includes('values')) {
+          // Sheets values API
+          fullUrl = `https://sheets.googleapis.com/v4/${endpoint}`;
+        } else {
+          fullUrl = `https://sheets.googleapis.com/v4/${endpoint}`;
+        }
+      } else {
+        // Default to Slack API
+        fullUrl = `https://slack.com/api/${endpoint}`;
+      }
     }
+
+    console.log('Making proxy request to:', fullUrl);
 
     // Use Pipedream's makeProxyRequest
     const proxyResponse = await pd.makeProxyRequest(
