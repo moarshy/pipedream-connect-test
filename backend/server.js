@@ -67,70 +67,62 @@ app.get('/api/accounts/:userId', async (req, res) => {
   }
 });
 
-// Proxy authenticated API requests
+// Proxy authenticated API requests using Pipedream's built-in proxy
 app.post('/api/proxy/:accountId', async (req, res) => {
   try {
     const { accountId } = req.params;
-    const { endpoint, method = 'GET', data } = req.body;
+    const { endpoint, method = 'GET', data, external_user_id } = req.body;
 
-    // Get account credentials
-    const account = await pd.getAccount(accountId, { include_credentials: 1 });
-    
-    if (!account) {
-      return res.status(404).json({ error: 'Account not found' });
+    if (!external_user_id) {
+      return res.status(400).json({ error: 'external_user_id is required' });
     }
 
-    // Build request based on the connected app
-    let apiRequest;
-    const credentials = account.credentials;
-    const appName = account.app?.name_slug || account.app?.name || 'unknown';
-
-    if (appName === 'slack') {
-      apiRequest = {
-        method,
-        url: endpoint.startsWith('http') ? endpoint : `https://slack.com/api/${endpoint}`,
-        headers: {
-          'Authorization': `Bearer ${credentials.oauth_access_token}`,
-          'Content-Type': 'application/json'
-        },
-        data: method !== 'GET' ? data : undefined,
-        params: method === 'GET' ? data : undefined
-      };
-    } else if (appName === 'google_sheets') {
-      apiRequest = {
-        method,
-        url: endpoint.startsWith('http') ? endpoint : `https://sheets.googleapis.com/v4/${endpoint}`,
-        headers: {
-          'Authorization': `Bearer ${credentials.oauth_access_token}`,
-          'Content-Type': 'application/json'
-        },
-        data: method !== 'GET' ? data : undefined,
-        params: method === 'GET' ? data : undefined
-      };
-    } else if (appName === 'gmail') {
-      apiRequest = {
-        method,
-        url: endpoint.startsWith('http') ? endpoint : `https://gmail.googleapis.com/gmail/v1/${endpoint}`,
-        headers: {
-          'Authorization': `Bearer ${credentials.oauth_access_token}`,
-          'Content-Type': 'application/json'
-        },
-        data: method !== 'GET' ? data : undefined,
-        params: method === 'GET' ? data : undefined
-      };
+    // Build the full URL for the API call
+    let fullUrl;
+    if (endpoint.startsWith('http')) {
+      fullUrl = endpoint;
     } else {
-      return res.status(400).json({ error: `App ${appName} not supported for proxy requests` });
+      // Default to Slack API for now, can extend for other apps
+      fullUrl = `https://slack.com/api/${endpoint}`;
     }
 
-    // Make the API request
-    const response = await axios(apiRequest);
-    res.json(response.data);
+    // Use Pipedream's makeProxyRequest
+    const proxyResponse = await pd.makeProxyRequest(
+      {
+        searchParams: {
+          account_id: accountId,
+          external_user_id: external_user_id,
+        }
+      },
+      {
+        url: fullUrl,
+        options: {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: method === 'POST' && data ? data : undefined,
+        },
+      }
+    );
+
+    // Handle the response based on its structure
+    let responseData;
+    if (proxyResponse.json && typeof proxyResponse.json === 'function') {
+      responseData = await proxyResponse.json();
+    } else if (proxyResponse.data) {
+      responseData = proxyResponse.data;
+    } else {
+      responseData = proxyResponse;
+    }
+
+    res.json(responseData);
 
   } catch (error) {
-    console.error('Error in proxy request:', error.response?.data || error.message);
+    console.error('Proxy request failed:', error.message);
     res.status(error.response?.status || 500).json({ 
       error: 'Proxy request failed',
-      details: error.response?.data || error.message
+      details: error.message
     });
   }
 });
